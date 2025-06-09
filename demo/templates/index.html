@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Virtual Try-On</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .upload-area {
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .preview-container {
+            min-height: 300px;
+        }
+        .result-container {
+            min-height: 400px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                    <i data-lucide="shirt" class="text-purple-600 w-6 h-6"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-white">AI Virtual Try-On</h1>
+                <span class="text-purple-200 text-sm">Upload & Transform</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-6 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Person Image Upload -->
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    <i data-lucide="user" class="w-5 h-5 mr-2 text-purple-600"></i>
+                    Person Image
+                </h2>
+                
+                <div id="personUploadArea" class="upload-area border-2 border-dashed border-purple-300 rounded-xl p-6 text-center bg-purple-50 hover:bg-purple-100 cursor-pointer">
+                    <div id="personUploadContent">
+                        <i data-lucide="upload" class="w-12 h-12 text-purple-400 mx-auto mb-4"></i>
+                        <p class="text-gray-600 mb-2">Drop your photo here or click to browse</p>
+                        <p class="text-sm text-gray-500">Supports JPG, PNG files</p>
+                    </div>
+                    <div id="personPreview" class="hidden preview-container">
+                        <img id="personPreviewImg" class="max-w-full max-h-80 object-contain rounded-lg mx-auto" alt="Person preview">
+                        <p class="text-sm text-gray-600 mt-2">Person image loaded</p>
+                    </div>
+                </div>
+                <input type="file" id="personFileInput" accept="image/*" class="hidden">
+            </div>
+
+            <!-- Cloth Image Upload -->
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    <i data-lucide="shirt" class="w-5 h-5 mr-2 text-blue-600"></i>
+                    Clothing Item
+                </h2>
+                
+                <div id="clothUploadArea" class="upload-area border-2 border-dashed border-blue-300 rounded-xl p-6 text-center bg-blue-50 hover:bg-blue-100 cursor-pointer">
+                    <div id="clothUploadContent">
+                        <i data-lucide="upload" class="w-12 h-12 text-blue-400 mx-auto mb-4"></i>
+                        <p class="text-gray-600 mb-2">Drop clothing image here or click to browse</p>
+                        <p class="text-sm text-gray-500">Supports JPG, PNG files</p>
+                    </div>
+                    <div id="clothPreview" class="hidden preview-container">
+                        <img id="clothPreviewImg" class="max-w-full max-h-80 object-contain rounded-lg mx-auto" alt="Cloth preview">
+                        <p class="text-sm text-gray-600 mt-2">Clothing image loaded</p>
+                    </div>
+                </div>
+                <input type="file" id="clothFileInput" accept="image/*" class="hidden">
+                
+                <!-- Settings -->
+                <div class="mt-4 space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Clothing Type</label>
+                        <select id="clothType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="upper">Upper Body</option>
+                            <option value="lower">Lower Body</option>
+                            <option value="overall">Full Body</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Inference Steps</label>
+                        <input type="range" id="inferenceSteps" min="10" max="50" value="20" class="w-full">
+                        <div class="text-sm text-gray-600 text-center"><span id="stepsValue">20</span> steps</div>
+                    </div>
+                </div>
+                
+                <!-- Generate Button -->
+                <button id="generateBtn" class="w-full mt-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <span class="flex items-center justify-center">
+                        <i data-lucide="wand-2" class="w-5 h-5 mr-2"></i>
+                        Generate Try-On
+                    </span>
+                </button>
+            </div>
+
+            <!-- Results Section -->
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    <i data-lucide="image" class="w-5 h-5 mr-2 text-green-600"></i>
+                    Result
+                </h2>
+                
+                <div id="resultContainer" class="result-container border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 flex items-center justify-center">
+                    <div id="resultPlaceholder" class="text-center">
+                        <i data-lucide="image" class="w-16 h-16 text-gray-400 mx-auto mb-4"></i>
+                        <p class="text-gray-500">Your try-on result will appear here</p>
+                    </div>
+                    
+                    <div id="resultLoading" class="hidden text-center">
+                        <div class="animate-spin w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+                        <p class="text-green-600 font-semibold">Generating your try-on...</p>
+                        <p class="text-sm text-gray-500 mt-2">This may take up to 2 minutes</p>
+                    </div>
+                    
+                    <div id="resultSuccess" class="hidden text-center w-full">
+                        <img id="resultImage" class="max-w-full h-auto rounded-lg mx-auto mb-4" alt="Try-on result">
+                        <p class="text-green-600 font-semibold">Try-on completed successfully!</p>
+                    </div>
+                    
+                    <div id="resultError" class="hidden text-center">
+                        <i data-lucide="alert-circle" class="w-16 h-16 text-red-400 mx-auto mb-4"></i>
+                        <p class="text-red-500 font-semibold">Error generating try-on</p>
+                        <p id="errorMessage" class="text-sm text-gray-500 mt-2"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Global variables
+        let selectedPersonFile = null;
+        let selectedClothFile = null;
+
+        // DOM elements
+        const personUploadArea = document.getElementById('personUploadArea');
+        const personFileInput = document.getElementById('personFileInput');
+        const personPreview = document.getElementById('personPreview');
+        const personPreviewImg = document.getElementById('personPreviewImg');
+        const personUploadContent = document.getElementById('personUploadContent');
+
+        const clothUploadArea = document.getElementById('clothUploadArea');
+        const clothFileInput = document.getElementById('clothFileInput');
+        const clothPreview = document.getElementById('clothPreview');
+        const clothPreviewImg = document.getElementById('clothPreviewImg');
+        const clothUploadContent = document.getElementById('clothUploadContent');
+
+        const generateBtn = document.getElementById('generateBtn');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultPlaceholder = document.getElementById('resultPlaceholder');
+        const resultLoading = document.getElementById('resultLoading');
+        const resultSuccess = document.getElementById('resultSuccess');
+        const resultError = document.getElementById('resultError');
+        const resultImage = document.getElementById('resultImage');
+        const errorMessage = document.getElementById('errorMessage');
+
+        const clothType = document.getElementById('clothType');
+        const inferenceSteps = document.getElementById('inferenceSteps');
+        const stepsValue = document.getElementById('stepsValue');
+
+        // Update steps display
+        inferenceSteps.addEventListener('input', (e) => {
+            stepsValue.textContent = e.target.value;
+        });
+
+        // Person image upload handlers
+        personUploadArea.addEventListener('click', () => personFileInput.click());
+        setupDragAndDrop(personUploadArea, handlePersonFileSelect);
+        personFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handlePersonFileSelect(e.target.files[0]);
+            }
+        });
+
+        // Cloth image upload handlers
+        clothUploadArea.addEventListener('click', () => clothFileInput.click());
+        setupDragAndDrop(clothUploadArea, handleClothFileSelect);
+        clothFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleClothFileSelect(e.target.files[0]);
+            }
+        });
+
+        function setupDragAndDrop(area, handler) {
+            area.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                area.classList.add('border-gray-500', 'bg-gray-100');
+            });
+            area.addEventListener('dragleave', () => {
+                area.classList.remove('border-gray-500', 'bg-gray-100');
+            });
+            area.addEventListener('drop', (e) => {
+                e.preventDefault();
+                area.classList.remove('border-gray-500', 'bg-gray-100');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handler(files[0]);
+                }
+            });
+        }
+
+        function handlePersonFileSelect(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file');
+                return;
+            }
+            
+            selectedPersonFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                personPreviewImg.src = e.target.result;
+                personUploadContent.classList.add('hidden');
+                personPreview.classList.remove('hidden');
+                updateGenerateButton();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleClothFileSelect(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file');
+                return;
+            }
+            
+            selectedClothFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                clothPreviewImg.src = e.target.result;
+                clothUploadContent.classList.add('hidden');
+                clothPreview.classList.remove('hidden');
+                updateGenerateButton();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateGenerateButton() {
+            const canGenerate = selectedPersonFile && selectedClothFile;
+            generateBtn.disabled = !canGenerate;
+            
+            if (canGenerate) {
+                generateBtn.innerHTML = `
+                    <span class="flex items-center justify-center">
+                        <i data-lucide="wand-2" class="w-5 h-5 mr-2"></i>
+                        Generate Try-On
+                    </span>
+                `;
+            } else {
+                generateBtn.innerHTML = `
+                    <span class="flex items-center justify-center">
+                        <i data-lucide="wand-2" class="w-5 h-5 mr-2"></i>
+                        Select both images
+                    </span>
+                `;
+            }
+            lucide.createIcons();
+        }
+
+        // Generate try-on
+        generateBtn.addEventListener('click', async () => {
+            if (!selectedPersonFile || !selectedClothFile) return;
+            
+            // Show loading state
+            hideAllResults();
+            resultLoading.classList.remove('hidden');
+            
+            const formData = new FormData();
+            formData.append('person_image', selectedPersonFile);
+            formData.append('cloth_image', selectedClothFile);
+            formData.append('cloth_type', clothType.value);
+            formData.append('num_inference_steps', inferenceSteps.value);
+            formData.append('guidance_scale', '2.5');
+            formData.append('seed', '42');
+            formData.append('width', '768');
+            formData.append('height', '1024');
+            
+            try {
+                const response = await fetch('/api/tryon', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                hideAllResults();
+                
+                if (data.success) {
+                    resultImage.src = data.result_url;
+                    resultSuccess.classList.remove('hidden');
+                } else {
+                    errorMessage.textContent = data.error || 'Unknown error occurred';
+                    resultError.classList.remove('hidden');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                hideAllResults();
+                errorMessage.textContent = 'Network error. Please try again.';
+                resultError.classList.remove('hidden');
+            }
+        });
+
+        function hideAllResults() {
+            resultPlaceholder.classList.add('hidden');
+            resultLoading.classList.add('hidden');
+            resultSuccess.classList.add('hidden');
+            resultError.classList.add('hidden');
+        }
+
+        // Initialize
+        updateGenerateButton();
+    </script>
+</body>
+</html> 
