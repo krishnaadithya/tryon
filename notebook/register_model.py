@@ -347,7 +347,7 @@ def test_registered_model():
         
         # Create proper base64 encoded images
         image_path = "../sample_images/dress.jpg"
-        dress_path = "../sample_images/person_image.jpg"
+        dress_path = "../sample_images/tshirt.jpg"
         
         # Proper way to encode images to base64
         def image_to_b64(image_path):
