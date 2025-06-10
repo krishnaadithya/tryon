@@ -74,12 +74,6 @@ tryon/
 ```bash
 # Backend serving endpoint (default: http://localhost:8000/)
 export MLFLOW_ENDPOINT="http://your-server:8000/"
-
-# Optional API key for authentication
-export API_KEY="your-api-key"
-
-# Health check your backend
-curl http://localhost:8000/health
 ```
 
 ### Custom Endpoints
